@@ -131,7 +131,8 @@ internal fun Class<*>.method(name: String, size: Int, returnType: Class<*>, cond
 // Android 16 compatibility: Check if v2 installer is available
 internal fun isV2InstallerAvailable(): Boolean {
     return try {
-        Class.forName("$INSTALLER_V2_PKG.fragments.InstallationFragment")
+        // Use lpClassLoader to check in the target app's class loader, not module's
+        Class.forName("$INSTALLER_V2_PKG.fragments.InstallationFragment", false, HookEntry.lpClassLoader)
         true
     } catch (e: ClassNotFoundException) {
         false

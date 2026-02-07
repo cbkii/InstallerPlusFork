@@ -51,11 +51,14 @@ public class HookEntry implements IXposedHookLoadPackage, IXposedHookZygoteInit 
             if (VERSION.SDK_INT >= VERSION_CODES.Q && VERSION.SDK_INT < 35) {
                 logDebug("initializeHook: Q (Android 10-14)");
                 InstallerHookQ.INSTANCE.initOnce();
+            } else if (VERSION.SDK_INT < VERSION_CODES.Q) {
+                // Android 7-9 (Nougat/Oreo/Pie)
+                throw new Exception("Pre-Q Android version, use Nougat hooks");
             }
         } catch (Exception e) {
             try {
-                // Android Nougat fallback
-                logDebug("initializeHook: N (Android 7)");
+                // Android Nougat fallback (Android 7-9)
+                logDebug("initializeHook: N (Android 7-9)");
                 InstallerHookN.INSTANCE.initOnce();
             } catch (Exception e1) {
                 e.addSuppressed(e1);
