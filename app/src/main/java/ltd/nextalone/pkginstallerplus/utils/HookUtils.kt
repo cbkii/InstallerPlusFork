@@ -128,9 +128,6 @@ internal fun Class<*>.method(name: String, size: Int, returnType: Class<*>, cond
     return null
 }
 
-internal val isV2InstallerAvailable: Boolean
-    get() = "$INSTALLER_V2_PKG.InstallLaunch".clazz != null
-
 // Android 16 compatibility: Check if v2 installer is available
 internal fun isV2InstallerAvailable(): Boolean {
     return try {
