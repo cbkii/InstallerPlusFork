@@ -35,27 +35,27 @@ public class HookEntry implements IXposedHookLoadPackage, IXposedHookZygoteInit 
     private static void initializeHookInternal(LoadPackageParam lpparam) {
         logDebug("initializeHookInternal start");
         lpClassLoader = lpparam.classLoader;
+        
+        // Android 15+ uses v2 installer (Baklava codename)
         if (isV2InstallerAvailable()) {
-            // Android 16 QPR2
             try {
-                logDebug("initializeHook: Baklava QPR2");
+                logDebug("initializeHook: Baklava (Android 15+/16)");
                 InstallerHookBaklava.INSTANCE.initOnce();
             } catch (Exception e) {
-                logThrowable("initializeHook(Baklava QPR2): ", e);
+                logThrowable("initializeHook(Baklava): ", e);
             }
         }
+        
+        // Fallback for Android 10-14 (Q/R/S/T)
         try {
-            if (VERSION.SDK_INT >= VERSION_CODES.Q) {
-                //Android Q -- Android T
-                logDebug("initializeHook: Q");
+            if (VERSION.SDK_INT >= VERSION_CODES.Q && VERSION.SDK_INT < 35) {
+                logDebug("initializeHook: Q (Android 10-14)");
                 InstallerHookQ.INSTANCE.initOnce();
-            } else {
-                throw new Exception("UnsupportApiVersionError");
             }
         } catch (Exception e) {
             try {
-                //Android Nougat
-                logDebug("initializeHook: N");
+                // Android Nougat fallback
+                logDebug("initializeHook: N (Android 7)");
                 InstallerHookN.INSTANCE.initOnce();
             } catch (Exception e1) {
                 e.addSuppressed(e1);

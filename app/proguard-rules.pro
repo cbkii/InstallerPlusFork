@@ -21,3 +21,23 @@
 #-renamesourcefileattribute SourceFile
 
 -keep class ltd.nextalone.**
+
+# Xposed API
+-keep class de.robv.android.xposed.** { *; }
+
+# Android 16: Keep PackageInfo fields
+-keepclassmembers class android.content.pm.PackageInfo {
+    public long longVersionCode;
+    public java.lang.String versionName;
+    public java.lang.String packageName;
+}
+
+# Android 16: Keep UserManager
+-keep class android.os.UserManager {
+    public java.lang.String getUserName();
+}
+
+# Keep reflection-accessed fields
+-keepclassmembers class * {
+    @android.annotation.SuppressLint *;
+}

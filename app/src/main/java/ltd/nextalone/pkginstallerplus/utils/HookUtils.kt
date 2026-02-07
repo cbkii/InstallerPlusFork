@@ -131,10 +131,25 @@ internal fun Class<*>.method(name: String, size: Int, returnType: Class<*>, cond
 internal val isV2InstallerAvailable: Boolean
     get() = "$INSTALLER_V2_PKG.InstallLaunch".clazz != null
 
+// Android 16 compatibility: Check if v2 installer is available
+internal fun isV2InstallerAvailable(): Boolean {
+    return try {
+        Class.forName("$INSTALLER_V2_PKG.fragments.InstallationFragment")
+        true
+    } catch (e: ClassNotFoundException) {
+        false
+    }
+}
+
+// Android 16 compatibility: Get PackageInfo with proper API handling
 internal fun PackageManager.getPackageInfoOrNull(pkgName: String): PackageInfo? =
     try {
-        @Suppress("DEPRECATION", "InlinedApi")
-        getPackageInfo(pkgName, PackageManager.MATCH_UNINSTALLED_PACKAGES)
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            getPackageInfo(pkgName, PackageManager.PackageInfoFlags.of(PackageManager.MATCH_UNINSTALLED_PACKAGES.toLong()))
+        } else {
+            @Suppress("DEPRECATION")
+            getPackageInfo(pkgName, PackageManager.MATCH_UNINSTALLED_PACKAGES)
+        }
     } catch (e: PackageManager.NameNotFoundException) {
         null
     }
