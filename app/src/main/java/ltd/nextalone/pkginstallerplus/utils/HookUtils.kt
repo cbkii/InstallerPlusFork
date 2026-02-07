@@ -22,7 +22,8 @@ internal val String.clazz: Class<*>?
 internal fun Member.hook(callback: XC_MethodHook) = try {
     XposedBridge.hookMethod(this, callback)
 } catch (e: Throwable) {
-    Log.e(TAG, e.message, e)
+    // Silent failure in production - only log in debug builds
+    logError(e.message ?: "Hook failed")
     null
 }
 
@@ -30,7 +31,8 @@ internal inline fun Member.hookBefore(crossinline hooker: (XC_MethodHook.MethodH
     override fun beforeHookedMethod(param: MethodHookParam?) = try {
         hooker(param!!)
     } catch (e: Throwable) {
-        Log.e(TAG, e.message, e)
+        // Silent failure in production
+        logError(e.message ?: "Hook before failed")
         Unit
     }
 })
@@ -39,7 +41,8 @@ internal inline fun Member.hookAfter(crossinline hooker: (XC_MethodHook.MethodHo
     override fun afterHookedMethod(param: MethodHookParam?) = try {
         hooker(param!!)
     } catch (e: Throwable) {
-        Log.e(TAG, e.message, e)
+        // Silent failure in production
+        logError(e.message ?: "Hook after failed")
         Unit
     }
 })
