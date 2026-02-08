@@ -20,17 +20,17 @@
 
 # LSPosed needs to find IXposedHookLoadPackage and handleLoadPackage
 -keep class * implements de.robv.android.xposed.IXposedHookLoadPackage {
-    <methods>;
+    *;
 }
 
 # LSPosed needs to find IXposedHookInitPackageResources
 -keep class * implements de.robv.android.xposed.IXposedHookInitPackageResources {
-    <methods>;
+    *;
 }
 
 # Keep IXposedHookZygoteInit implementation
 -keep class * implements de.robv.android.xposed.IXposedHookZygoteInit {
-    <methods>;
+    *;
 }
 
 # Android 16: Keep PackageInfo fields accessed via reflection
