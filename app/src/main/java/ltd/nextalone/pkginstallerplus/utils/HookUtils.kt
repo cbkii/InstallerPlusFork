@@ -135,9 +135,33 @@ internal fun Class<*>.method(name: String, size: Int, returnType: Class<*>, cond
 internal fun isV2InstallerAvailable(): Boolean {
     return try {
         // Use lpClassLoader to check in the target app's class loader, not module's
-        Class.forName("$INSTALLER_V2_PKG.fragments.InstallationFragment", false, HookEntry.lpClassLoader)
+        val classLoader = HookEntry.lpClassLoader ?: return false
+        
+        // Check for InstallationFragment as the primary indicator of v2 installer
+        // This is the minimum viable check - install functionality is more critical than uninstall
+        Class.forName("$INSTALLER_V2_PKG.fragments.InstallationFragment", false, classLoader)
+        
+        // Check if UninstallationFragment is also available (but don't fail if it's not)
+        val hasUninstallFragment = try {
+            Class.forName("$INSTALLER_V2_PKG.fragments.UninstallationFragment", false, classLoader)
+            true
+        } catch (e: ClassNotFoundException) {
+            false
+        }
+        
+        // Log what v2 UI components are available
+        if (hasUninstallFragment) {
+            logDebug("V2 Installer detected (Android 15+/16): Install + Uninstall UI available")
+        } else {
+            logDebug("V2 Installer detected (Android 15+/16): Install UI available, Uninstall UI not found")
+        }
+        
         true
     } catch (e: ClassNotFoundException) {
+        logDebug("V2 Installer not available: ${e.message}")
+        false
+    } catch (e: Exception) {
+        logError("Error checking v2 installer availability: ${e.message}")
         false
     }
 }

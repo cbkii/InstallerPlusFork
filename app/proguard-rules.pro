@@ -15,6 +15,9 @@
 # Keep BuildConfig for version checks
 -keep class ltd.nextalone.pkginstallerplus.BuildConfig { *; }
 
+# Keep BuildVersionDetector utility for Android 16 version detection
+-keep class ltd.nextalone.pkginstallerplus.utils.BuildVersionDetector { *; }
+
 # Xposed API - must be accessible via reflection
 -keep class de.robv.android.xposed.** { *; }
 -keep interface de.robv.android.xposed.** { *; }
