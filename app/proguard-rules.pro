@@ -5,8 +5,8 @@
 # For more details, see
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
-# Preserve line numbers for debugging stack traces
--keepattributes SourceFile,LineNumberTable
+# Prevent ProGuard from stripping generic signatures and keep annotations
+-keepattributes Signature,SourceFile,LineNumberTable,*Annotation*
 
 # Keep all Xposed module classes and their members
 -keep class ltd.nextalone.** { *; }
@@ -50,14 +50,11 @@
 # Keep BuildConfig for debug checks
 -keep class ltd.nextalone.pkginstallerplus.BuildConfig { *; }
 
-# Prevent ProGuard from stripping generic signatures needed for reflection
--keepattributes Signature
-
-# Keep annotations used by Xposed/LSPosed
--keepattributes *Annotation*
-
 # Kotlin metadata (your codebase is 86% Kotlin)
 -keep class kotlin.Metadata { *; }
 
-# Prevent optimization that breaks Xposed hooking
+# Prevent optimization that breaks Xposed hooking:
+# - arithmetic/cast simplifications can break hook method signatures
+# - field optimizations can prevent reflection-based field access
+# - class merging can make LSPosed unable to locate hook classes reflectively
 -optimizations !code/simplification/arithmetic,!code/simplification/cast,!field/*,!class/merging/*
