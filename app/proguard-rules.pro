@@ -5,35 +5,63 @@
 # For more details, see
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Preserve line numbers for debugging stack traces
+-keepattributes SourceFile,LineNumberTable
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Keep all Xposed module classes and their members
+-keep class ltd.nextalone.** { *; }
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# Keep all inner classes explicitly
+-keep class ltd.nextalone.**$* { *; }
 
-# Keep module classes - already handles our reflection needs
--keep class ltd.nextalone.**
-
-# Xposed API
+# Xposed API - must be accessible via reflection
 -keep class de.robv.android.xposed.** { *; }
+-keep interface de.robv.android.xposed.** { *; }
+
+# LSPosed needs to find IXposedHookLoadPackage and handleLoadPackage
+-keep class * implements de.robv.android.xposed.IXposedHookLoadPackage {
+    public void handleLoadPackage(...);
+}
+
+# LSPosed needs to find IXposedHookInitPackageResources
+-keep class * implements de.robv.android.xposed.IXposedHookInitPackageResources {
+    public void handleInitPackageResources(...);
+}
+
+# Keep all hook entry point methods that LSPosed calls
+-keepclassmembers class * {
+    public void handleLoadPackage(...);
+    public void handleInitPackageResources(...);
+}
 
 # Android 16: Keep PackageInfo fields accessed via reflection
 -keepclassmembers class android.content.pm.PackageInfo {
     public long longVersionCode;
     public java.lang.String versionName;
     public java.lang.String packageName;
+    public android.content.pm.ApplicationInfo applicationInfo;
 }
 
 # Android 16: Keep UserManager methods accessed via reflection
 -keep class android.os.UserManager {
     public java.lang.String getUserName();
+    public android.os.UserHandle getUserForSerialNumber(long);
 }
+
+# Keep BuildConfig for debug checks
+-keep class ltd.nextalone.pkginstallerplus.BuildConfig { *; }
+
+# Prevent ProGuard from stripping generic signatures needed for reflection
+-keepattributes Signature
+
+# Keep annotations used by Xposed/LSPosed
+-keepattributes *Annotation*
+
+# Kotlin metadata (your codebase is 86% Kotlin)
+-keep class kotlin.Metadata { *; }
+-keepclassmembers class kotlin.Metadata {
+    public <methods>;
+}
+
+# Prevent optimization that breaks Xposed hooking
+-optimizations !code/simplification/arithmetic,!code/simplification/cast,!field/*,!class/merging/*
