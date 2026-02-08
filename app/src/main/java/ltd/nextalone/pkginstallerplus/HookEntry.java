@@ -16,6 +16,7 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam;
 import ltd.nextalone.pkginstallerplus.hook.InstallerHookBaklava;
 import ltd.nextalone.pkginstallerplus.hook.InstallerHookN;
 import ltd.nextalone.pkginstallerplus.hook.InstallerHookQ;
+import ltd.nextalone.pkginstallerplus.utils.BuildVersionDetector;
 
 import static ltd.nextalone.pkginstallerplus.utils.HookUtilsKt.isV2InstallerAvailable;
 import static ltd.nextalone.pkginstallerplus.utils.LogUtilsKt.logDebug;
@@ -34,10 +35,19 @@ public class HookEntry implements IXposedHookLoadPackage, IXposedHookZygoteInit 
         logDebug("initializeHookInternal start");
         lpClassLoader = lpparam.classLoader;
         
+        // Log detailed Android version for debugging
+        logDebug("Android version: " + BuildVersionDetector.INSTANCE.getDetailedVersionString());
+        
         // Android 15+ uses v2 installer (Baklava codename)
+        // This includes Android 16 with all QPR variants
         if (isV2InstallerAvailable()) {
             try {
-                logDebug("initializeHook: Baklava (Android 15+/16)");
+                if (BuildVersionDetector.INSTANCE.isAndroid16()) {
+                    String variant = BuildVersionDetector.INSTANCE.getAndroid16Variant();
+                    logDebug("initializeHook: Android 16 " + (variant != null ? variant : "") + " detected");
+                } else {
+                    logDebug("initializeHook: Baklava (Android 15)");
+                }
                 InstallerHookBaklava.INSTANCE.initOnce();
             } catch (Exception e) {
                 logThrowable("initializeHook(Baklava): ", e);
@@ -45,22 +55,25 @@ public class HookEntry implements IXposedHookLoadPackage, IXposedHookZygoteInit 
         }
         
         // Fallback for Android 10-14 (Q/R/S/T)
-        try {
-            if (VERSION.SDK_INT >= VERSION_CODES.Q && VERSION.SDK_INT < 35) {
-                logDebug("initializeHook: Q (Android 10-14)");
-                InstallerHookQ.INSTANCE.initOnce();
-            } else if (VERSION.SDK_INT < VERSION_CODES.Q) {
-                // Android 7-9 (Nougat/Oreo/Pie)
-                throw new Exception("Pre-Q Android version, use Nougat hooks");
-            }
-        } catch (Exception e) {
+        // Only attempt if not Android 15+ to avoid duplicate hooks
+        if (!BuildVersionDetector.INSTANCE.isAndroid15OrHigher()) {
             try {
-                // Android Nougat fallback (Android 7-9)
-                logDebug("initializeHook: N (Android 7-9)");
-                InstallerHookN.INSTANCE.initOnce();
-            } catch (Exception e1) {
-                e.addSuppressed(e1);
-                logThrowable("initializeHookInternal: ", e);
+                if (VERSION.SDK_INT >= VERSION_CODES.Q && VERSION.SDK_INT < 35) {
+                    logDebug("initializeHook: Q (Android 10-14)");
+                    InstallerHookQ.INSTANCE.initOnce();
+                } else if (VERSION.SDK_INT < VERSION_CODES.Q) {
+                    // Android 7-9 (Nougat/Oreo/Pie)
+                    throw new Exception("Pre-Q Android version, use Nougat hooks");
+                }
+            } catch (Exception e) {
+                try {
+                    // Android Nougat fallback (Android 7-9)
+                    logDebug("initializeHook: N (Android 7-9)");
+                    InstallerHookN.INSTANCE.initOnce();
+                } catch (Exception e1) {
+                    e.addSuppressed(e1);
+                    logThrowable("initializeHookInternal: ", e);
+                }
             }
         }
     }

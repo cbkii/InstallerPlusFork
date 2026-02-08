@@ -135,9 +135,22 @@ internal fun Class<*>.method(name: String, size: Int, returnType: Class<*>, cond
 internal fun isV2InstallerAvailable(): Boolean {
     return try {
         // Use lpClassLoader to check in the target app's class loader, not module's
-        Class.forName("$INSTALLER_V2_PKG.fragments.InstallationFragment", false, HookEntry.lpClassLoader)
+        val classLoader = HookEntry.lpClassLoader ?: return false
+        
+        // Try to load the v2 installer fragment class
+        Class.forName("$INSTALLER_V2_PKG.fragments.InstallationFragment", false, classLoader)
+        
+        // Additional validation for Android 16 - check if it's a genuine v2 installer
+        // by verifying the UninstallationFragment also exists
+        Class.forName("$INSTALLER_V2_PKG.fragments.UninstallationFragment", false, classLoader)
+        
+        logDebug("V2 Installer detected (Android 15+/16)")
         true
     } catch (e: ClassNotFoundException) {
+        logDebug("V2 Installer not available: ${e.message}")
+        false
+    } catch (e: Exception) {
+        logError("Error checking v2 installer availability: ${e.message}")
         false
     }
 }
