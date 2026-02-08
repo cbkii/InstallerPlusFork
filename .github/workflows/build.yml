@@ -22,14 +22,20 @@ jobs:
       uses: android-actions/setup-android@v3
     
     # Decode and setup keystore from secrets
-    - name: Setup Keystore
+    - name: Decode Keystore
+      if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+      env:
+        ENCODED_STRING: ${{ secrets.KEYSTORE_FILE }}
+      run: |
+        echo $ENCODED_STRING | base64 -di > ${{ github.workspace }}/app/my-release-key.jks
+    
+    - name: Create keystore.properties
       if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
       run: |
-        echo "${{ secrets.SIGNING_KEYSTORE_BASE64 }}" | base64 -d > ${{ github.workspace }}/release.jks
-        echo "SIGNING_KEYSTORE_PATH=${{ github.workspace }}/release.jks" >> $GITHUB_ENV
-        echo "SIGNING_STORE_PASSWORD=${{ secrets.SIGNING_STORE_PASSWORD }}" >> $GITHUB_ENV
-        echo "SIGNING_KEY_ALIAS=${{ secrets.SIGNING_KEY_ALIAS }}" >> $GITHUB_ENV
-        echo "SIGNING_KEY_PASSWORD=${{ secrets.SIGNING_KEY_PASSWORD }}" >> $GITHUB_ENV
+        echo "storeFile=${{ github.workspace }}/app/my-release-key.jks" > keystore.properties
+        echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" >> keystore.properties
+        echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> keystore.properties
+        echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> keystore.properties
     
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew

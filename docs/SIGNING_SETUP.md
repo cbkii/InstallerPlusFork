@@ -8,7 +8,7 @@ You need a Java keystore file (`.jks` or `.keystore`) with your signing key. If 
 
 ```bash
 keytool -genkey -v -keystore my-release-key.jks \
-  -alias apksignkey -keyalg RSA -keysize 2048 -validity 10000
+  -alias my-release-key -keyalg RSA -keysize 2048 -validity 10000
 ```
 
 ## Setting Up GitHub Secrets
@@ -17,12 +17,12 @@ keytool -genkey -v -keystore my-release-key.jks \
 
 On Linux/macOS:
 ```bash
-base64 -i my-release-key.jks | tr -d '\n' > keystore-base64.txt
+base64 -i my-release-key.jks | tr -d '\n' > keystore.txt
 ```
 
 On Windows (PowerShell):
 ```powershell
-[Convert]::ToBase64String([IO.File]::ReadAllBytes("my-release-key.jks")) | Out-File -FilePath keystore-base64.txt -NoNewline
+[Convert]::ToBase64String([IO.File]::ReadAllBytes("my-release-key.jks")) | Out-File -FilePath keystore.txt -NoNewline
 ```
 
 ### Step 2: Add GitHub Repository Secrets
@@ -33,21 +33,29 @@ Add these 4 secrets:
 
 | Secret Name | Value | Description |
 |------------|-------|-------------|
-| `SIGNING_KEYSTORE_BASE64` | Content of `keystore-base64.txt` | Your keystore encoded as base64 |
-| `SIGNING_STORE_PASSWORD` | Your keystore password | Password you used when creating the keystore |
-| `SIGNING_KEY_ALIAS` | `apksignkey` | The alias you used (default: `apksignkey`) |
-| `SIGNING_KEY_PASSWORD` | Your key password | Usually same as store password |
+| `KEYSTORE_FILE` | Content of `keystore.txt` | Your keystore encoded as base64 |
+| `KEYSTORE_PASSWORD` | Your keystore password | Password you used when creating the keystore |
+| `KEY_ALIAS` | `my-release-key` | The alias you used (default: `my-release-key`) |
+| `KEY_PASSWORD` | Your key password | Usually same as keystore password |
 
 ### Step 3: Trigger a Build
 
 Once secrets are configured, push to `main` branch or trigger a workflow manually. The release APK will be signed automatically.
+
+## How It Works
+
+During the GitHub Actions workflow:
+1. The base64-encoded keystore is decoded and saved as `app/my-release-key.jks`
+2. A `keystore.properties` file is created with signing credentials
+3. Gradle reads from `keystore.properties` to sign the release APK
+4. Both the keystore and properties file are temporary and never committed
 
 ## Security Notes
 
 - ⚠️ **Never commit your keystore file or passwords to the repository**
 - ✅ GitHub Secrets are encrypted and only exposed to workflow runs
 - ✅ Secrets are not available to pull request workflows from forks (security feature)
-- ✅ The keystore file is temporarily created during the build and deleted after
+- ✅ The keystore file and properties are temporarily created during the build and deleted after
 
 ## Verifying Signed APKs
 
@@ -61,10 +69,25 @@ apksigner verify --print-certs InstallerPlusFork-release-signed.apk
 jarsigner -verify -verbose -certs InstallerPlusFork-release-signed.apk
 ```
 
+## Finding Your Key Alias
+
+If you don't remember your key alias, run:
+
+```bash
+keytool -list -v -keystore my-release-key.jks
+```
+
+Look for the "Alias name" in the output.
+
 ## Local Builds
 
-Local release builds will be unsigned unless you:
-1. Create a `keystore.properties` file in the project root (add to `.gitignore`)
-2. Set environment variables before building
+Local release builds will be unsigned unless you create a `keystore.properties` file in the project root:
 
-Without signing configuration, local builds will still work but produce unsigned APKs.
+```properties
+storeFile=/path/to/your/my-release-key.jks
+storePassword=your_keystore_password
+keyAlias=my-release-key
+keyPassword=your_key_password
+```
+
+**Important:** Add `keystore.properties` to `.gitignore` (already configured) to prevent accidental commits.
