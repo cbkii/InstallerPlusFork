@@ -9,6 +9,7 @@ import android.os.UserManager
 import android.text.SpannableStringBuilder
 import android.text.Spanned
 import android.text.style.ForegroundColorSpan
+import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
@@ -63,7 +64,12 @@ object InstallerHookQ {
             val install: View? = activity.findHostView("install_confirm_question") ?:
             activity.get("mDialog")?.findHostView("install_confirm_question") // QPR2+
             val newVersionStr = (newPkgInfo.versionName ?: "N/A") + "(" + newPkgInfo.longVersionCode + ")"
-            val newSdkStr = newPkgInfo.applicationInfo.targetSdkVersion.toString()
+            val newSdkStr = if (newPkgInfo.applicationInfo != null) {
+                newPkgInfo.applicationInfo.targetSdkVersion.toString()
+            } else {
+                Log.w(TAG, "applicationInfo is null for new package $pkgName - OS/API mismatch or incomplete PackageInfo")
+                "N/A"
+            }
 
             sb.append(activity.getString(R.string.IPP_info_user) + ": ")
                 .append(usrManager.userName)
@@ -88,8 +94,18 @@ object InstallerHookQ {
             activity.get("mDialog")?.findHostView("install_confirm_question_update") // QPR2+
             val oldVersionStr = """${oldPkgInfo.versionName ?: "N/A"}(${oldPkgInfo.longVersionCode})"""
             val newVersionStr = """${newPkgInfo.versionName ?: "N/A"}(${newPkgInfo.longVersionCode})"""
-            val oldSdkStr = oldPkgInfo.applicationInfo.targetSdkVersion.toString()
-            val newSdkStr = newPkgInfo.applicationInfo.targetSdkVersion.toString()
+            val oldSdkStr = if (oldPkgInfo.applicationInfo != null) {
+                oldPkgInfo.applicationInfo.targetSdkVersion.toString()
+            } else {
+                Log.w(TAG, "applicationInfo is null for old package $pkgName - OS/API mismatch or incomplete PackageInfo")
+                "N/A"
+            }
+            val newSdkStr = if (newPkgInfo.applicationInfo != null) {
+                newPkgInfo.applicationInfo.targetSdkVersion.toString()
+            } else {
+                Log.w(TAG, "applicationInfo is null for new package $pkgName - OS/API mismatch or incomplete PackageInfo")
+                "N/A"
+            }
 
             sb.append(activity.getString(R.string.IPP_info_user) + ": ")
                 .append(usrManager.userName)
@@ -133,7 +149,12 @@ object InstallerHookQ {
         val sb = SpannableStringBuilder()
         if (oldPkgInfo != null) {
             val oldVersionStr = (oldPkgInfo.versionName ?: "N/A") + "(" + oldPkgInfo.longVersionCode + ")"
-            val oldSdkStr = oldPkgInfo.applicationInfo.targetSdkVersion.toString()
+            val oldSdkStr = if (oldPkgInfo.applicationInfo != null) {
+                oldPkgInfo.applicationInfo.targetSdkVersion.toString()
+            } else {
+                Log.w(TAG, "applicationInfo is null for old package $packageName during uninstall - OS/API mismatch or incomplete PackageInfo")
+                "N/A"
+            }
 
             sb.append(activity.getString(R.string.IPP_info_package) + ": ")
                 .append(packageName, ForegroundColorSpan(ThemeUtil.colorRed), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)

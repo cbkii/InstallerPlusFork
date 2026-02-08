@@ -61,7 +61,12 @@ object InstallerHookN {
         val sb = SpannableStringBuilder()
         if (oldPkgInfo == null) {
             val newVersionStr = (newPkgInfo.versionName ?: "N/A") + "(" + newPkgInfo.versionCode + ")"
-            val newSdkStr = newPkgInfo.applicationInfo.targetSdkVersion.toString()
+            val newSdkStr = if (newPkgInfo.applicationInfo != null) {
+                newPkgInfo.applicationInfo.targetSdkVersion.toString()
+            } else {
+                Log.w(TAG, "applicationInfo is null for new package $pkgName - OS/API mismatch or incomplete PackageInfo")
+                "N/A"
+            }
 
             sb.append(activity.getString(R.string.IPP_info_user) + ": ")
                 .append(usrManager.userName)
@@ -78,8 +83,18 @@ object InstallerHookN {
         } else {
             val oldVersionStr = (oldPkgInfo.versionName ?: "N/A") + "(" + oldPkgInfo.versionCode + ")"
             val newVersionStr = (newPkgInfo.versionName ?: "N/A") + "(" + newPkgInfo.versionCode + ")"
-            val oldSdkStr = oldPkgInfo.applicationInfo.targetSdkVersion.toString()
-            val newSdkStr = newPkgInfo.applicationInfo.targetSdkVersion.toString()
+            val oldSdkStr = if (oldPkgInfo.applicationInfo != null) {
+                oldPkgInfo.applicationInfo.targetSdkVersion.toString()
+            } else {
+                Log.w(TAG, "applicationInfo is null for old package $pkgName - OS/API mismatch or incomplete PackageInfo")
+                "N/A"
+            }
+            val newSdkStr = if (newPkgInfo.applicationInfo != null) {
+                newPkgInfo.applicationInfo.targetSdkVersion.toString()
+            } else {
+                Log.w(TAG, "applicationInfo is null for new package $pkgName - OS/API mismatch or incomplete PackageInfo")
+                "N/A"
+            }
 
             sb.append(activity.getString(R.string.IPP_info_user) + ": ")
                 .append(usrManager.userName)
