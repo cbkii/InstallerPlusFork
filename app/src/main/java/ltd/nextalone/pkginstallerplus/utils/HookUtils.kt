@@ -22,7 +22,8 @@ internal val String.clazz: Class<*>?
 internal fun Member.hook(callback: XC_MethodHook) = try {
     XposedBridge.hookMethod(this, callback)
 } catch (e: Throwable) {
-    Log.e(TAG, e.message, e)
+    // Silent failure in production - only log in debug builds
+    logError(e.message ?: "Hook failed")
     null
 }
 
@@ -30,7 +31,8 @@ internal inline fun Member.hookBefore(crossinline hooker: (XC_MethodHook.MethodH
     override fun beforeHookedMethod(param: MethodHookParam?) = try {
         hooker(param!!)
     } catch (e: Throwable) {
-        Log.e(TAG, e.message, e)
+        // Silent failure in production
+        logError(e.message ?: "Hook before failed")
         Unit
     }
 })
@@ -39,7 +41,8 @@ internal inline fun Member.hookAfter(crossinline hooker: (XC_MethodHook.MethodHo
     override fun afterHookedMethod(param: MethodHookParam?) = try {
         hooker(param!!)
     } catch (e: Throwable) {
-        Log.e(TAG, e.message, e)
+        // Silent failure in production
+        logError(e.message ?: "Hook after failed")
         Unit
     }
 })
@@ -128,13 +131,26 @@ internal fun Class<*>.method(name: String, size: Int, returnType: Class<*>, cond
     return null
 }
 
-internal val isV2InstallerAvailable: Boolean
-    get() = "$INSTALLER_V2_PKG.InstallLaunch".clazz != null
+// Android 16 compatibility: Check if v2 installer is available
+internal fun isV2InstallerAvailable(): Boolean {
+    return try {
+        // Use lpClassLoader to check in the target app's class loader, not module's
+        Class.forName("$INSTALLER_V2_PKG.fragments.InstallationFragment", false, HookEntry.lpClassLoader)
+        true
+    } catch (e: ClassNotFoundException) {
+        false
+    }
+}
 
+// Android 16 compatibility: Get PackageInfo with proper API handling
 internal fun PackageManager.getPackageInfoOrNull(pkgName: String): PackageInfo? =
     try {
-        @Suppress("DEPRECATION", "InlinedApi")
-        getPackageInfo(pkgName, PackageManager.MATCH_UNINSTALLED_PACKAGES)
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            getPackageInfo(pkgName, PackageManager.PackageInfoFlags.of(PackageManager.MATCH_UNINSTALLED_PACKAGES.toLong()))
+        } else {
+            @Suppress("DEPRECATION")
+            getPackageInfo(pkgName, PackageManager.MATCH_UNINSTALLED_PACKAGES)
+        }
     } catch (e: PackageManager.NameNotFoundException) {
         null
     }

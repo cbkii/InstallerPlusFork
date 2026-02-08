@@ -16,8 +16,9 @@ import ltd.nextalone.pkginstallerplus.HookEntry.injectModuleResources
 import ltd.nextalone.pkginstallerplus.R
 import ltd.nextalone.pkginstallerplus.utils.*
 
-private const val TAG_INSTALL_DETAILS = "IPP_install_details"
-private const val TAG_UNINSTALL_DETAILS = "IPP_uninstall_details"
+// Use generic, system-like tags to avoid detection
+private const val TAG_INSTALL_DETAILS = "app_details_install"
+private const val TAG_UNINSTALL_DETAILS = "app_details_uninstall"
 
 object InstallerHookBaklava {
     fun initOnce() {
@@ -78,7 +79,8 @@ object InstallerHookBaklava {
         val sb = SpannableStringBuilder()
         sb
             .append(activity.getString(R.string.IPP_info_user) + ": ")
-            .append(usrManager.userName)
+            // Add null safety for userName - may be null on Android 16
+            .append(usrManager.userName ?: "Unknown")
             .append('\n')
             .append(activity.getString(R.string.IPP_info_package) + ": ")
             .append(

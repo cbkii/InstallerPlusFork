@@ -29,33 +29,34 @@ public class HookEntry implements IXposedHookLoadPackage, IXposedHookZygoteInit 
     public static ClassLoader lpClassLoader;
     private static boolean sInitialized = false;
     private static String sModulePath = null;
-    private static long sResInjectBeginTime = 0;
-    private static long sResInjectEndTime = 0;
 
     private static void initializeHookInternal(LoadPackageParam lpparam) {
         logDebug("initializeHookInternal start");
         lpClassLoader = lpparam.classLoader;
+        
+        // Android 15+ uses v2 installer (Baklava codename)
         if (isV2InstallerAvailable()) {
-            // Android 16 QPR2
             try {
-                logDebug("initializeHook: Baklava QPR2");
+                logDebug("initializeHook: Baklava (Android 15+/16)");
                 InstallerHookBaklava.INSTANCE.initOnce();
             } catch (Exception e) {
-                logThrowable("initializeHook(Baklava QPR2): ", e);
+                logThrowable("initializeHook(Baklava): ", e);
             }
         }
+        
+        // Fallback for Android 10-14 (Q/R/S/T)
         try {
-            if (VERSION.SDK_INT >= VERSION_CODES.Q) {
-                //Android Q -- Android T
-                logDebug("initializeHook: Q");
+            if (VERSION.SDK_INT >= VERSION_CODES.Q && VERSION.SDK_INT < 35) {
+                logDebug("initializeHook: Q (Android 10-14)");
                 InstallerHookQ.INSTANCE.initOnce();
-            } else {
-                throw new Exception("UnsupportApiVersionError");
+            } else if (VERSION.SDK_INT < VERSION_CODES.Q) {
+                // Android 7-9 (Nougat/Oreo/Pie)
+                throw new Exception("Pre-Q Android version, use Nougat hooks");
             }
         } catch (Exception e) {
             try {
-                //Android Nougat
-                logDebug("initializeHook: N");
+                // Android Nougat fallback (Android 7-9)
+                logDebug("initializeHook: N (Android 7-9)");
                 InstallerHookN.INSTANCE.initOnce();
             } catch (Exception e1) {
                 e.addSuppressed(e1);
@@ -65,62 +66,45 @@ public class HookEntry implements IXposedHookLoadPackage, IXposedHookZygoteInit 
     }
 
     public static void injectModuleResources(Resources res) {
-        logDebug("injectModuleResources start");
         if (res == null) {
             return;
         }
+        // Quick check: if already injected, return early
         try {
             res.getString(R.string.IPP_res_inject_success);
             return;
         } catch (Resources.NotFoundException ignored) {
         }
+        
+        // Perform resource injection with minimal logging for stealth
         try {
             if (myClassLoader == null) {
                 myClassLoader = HookEntry.class.getClassLoader();
             }
             if (sModulePath == null) {
-                // should not happen
-                throw new IllegalStateException("sModulePath is null");
+                return; // Silently fail to avoid detection
             }
-            if (sResInjectBeginTime == 0) {
-                sResInjectBeginTime = System.currentTimeMillis();
-            }
+            
             AssetManager assets = res.getAssets();
             @SuppressLint("DiscouragedPrivateApi")
             Method addAssetPath = AssetManager.class.getDeclaredMethod("addAssetPath", String.class);
             addAssetPath.setAccessible(true);
-            int cookie = (int) addAssetPath.invoke(assets, sModulePath);
+            addAssetPath.invoke(assets, sModulePath);
+            
+            // Verify injection worked (silent check)
             try {
-                logDetail("injectModuleResources", res.getString(R.string.IPP_res_inject_success));
-                if (sResInjectEndTime == 0) {
-                    sResInjectEndTime = System.currentTimeMillis();
-                }
+                res.getString(R.string.IPP_res_inject_success);
             } catch (Resources.NotFoundException e) {
-                logError("Fatal: injectModuleResources: test injection failure!");
-                logError("injectModuleResources: cookie=" + cookie + ", path=" + sModulePath + ", loader=" + myClassLoader);
-                long length = -1;
-                boolean read = false;
-                boolean exist = false;
-                boolean isDir = false;
-                try {
-                    File f = new File(sModulePath);
-                    exist = f.exists();
-                    isDir = f.isDirectory();
-                    length = f.length();
-                    read = f.canRead();
-                } catch (Throwable e2) {
-                    logError(String.valueOf(e2));
-                }
-                logError("sModulePath: exists = " + exist + ", isDirectory = " + isDir + ", canRead = " + read + ", fileLength = " + length);
+                // Silent failure - avoid logging that reveals module presence
             }
         } catch (Exception e) {
-            logError(String.valueOf(e));
+            // Silent failure - avoid logging that reveals module internals
         }
     }
 
     @Override
     public void handleLoadPackage(XC_LoadPackage.LoadPackageParam lpparam) throws Throwable {
-        logDetail("handleLoadPackage", lpparam.packageName);
+        // Only hook package installer apps - minimal logging for stealth
         if ("com.google.android.packageinstaller".equals(lpparam.packageName)
             || "com.android.packageinstaller".equals(lpparam.packageName)) {
             if (!sInitialized) {

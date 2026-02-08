@@ -20,4 +20,20 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
+# Keep module classes - already handles our reflection needs
 -keep class ltd.nextalone.**
+
+# Xposed API
+-keep class de.robv.android.xposed.** { *; }
+
+# Android 16: Keep PackageInfo fields accessed via reflection
+-keepclassmembers class android.content.pm.PackageInfo {
+    public long longVersionCode;
+    public java.lang.String versionName;
+    public java.lang.String packageName;
+}
+
+# Android 16: Keep UserManager methods accessed via reflection
+-keep class android.os.UserManager {
+    public java.lang.String getUserName();
+}

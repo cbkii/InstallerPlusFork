@@ -9,7 +9,7 @@
 
 ## Compatibility
 
-Compatible with AOSP-like installer,been tested in:  
+Compatible with AOSP-like installer, tested in:  
 
 1. Hydrogen OS Android 7.1.1
 2. Oxygen OS Android Q
@@ -18,6 +18,14 @@ Compatible with AOSP-like installer,been tested in:
 5. LineageOS Android 13
 6. Pixel/AOSP Android 13
 7. Pixel/AOSP Android 14
+8. Pixel/AOSP Android 15 ✨
+9. **Pixel/AOSP Android 16** ✨ NEW (Pixel 9/9a)
+
+### Requirements for Android 16
+- **LSPosed Framework v1.11+** (with Android 16 support)
+- **Magisk v26+** with Zygisk enabled
+- **Android 16 API level 36**
+- **Java 17 runtime** (for building)
 
 ## Repo License
 
