@@ -12,23 +12,7 @@ android {
         minSdkVersion 23
         targetSdkVersion 35
         versionCode(getTimeStamp.call() as int)
-        versionName "2.0" + (getGitHeadRefsSuffix.call() as String)
-    }
-
-    signingConfigs {
-        release {
-            // Load keystore from keystore.properties file (created by GitHub Actions)
-            def keystorePropertiesFile = rootProject.file("keystore.properties")
-            if (keystorePropertiesFile.exists()) {
-                def keystoreProperties = new Properties()
-                keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
-                
-                storeFile file(keystoreProperties['storeFile'])
-                storePassword keystoreProperties['storePassword']
-                keyAlias keystoreProperties['keyAlias']
-                keyPassword keystoreProperties['keyPassword']
-            }
-        }
+        versionName "1.2" + (getGitHeadRefsSuffix.call() as String)
     }
 
     buildTypes {
@@ -36,12 +20,6 @@ android {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            
-            // Apply signing config to release builds if keystore.properties exists
-            def keystorePropertiesFile = rootProject.file("keystore.properties")
-            if (keystorePropertiesFile.exists()) {
-                signingConfig signingConfigs.release
-            }
         }
     }
     aaptOptions {
@@ -56,7 +34,6 @@ android {
     }
     buildFeatures {
         viewBinding true
-        buildConfig true
     }
     namespace 'ltd.nextalone.pkginstallerplus'
 }

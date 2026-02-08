@@ -1,28 +1,18 @@
 package ltd.nextalone.pkginstallerplus.utils
 
 import android.util.Log
-import ltd.nextalone.pkginstallerplus.BuildConfig
 
-// Use generic system-like tag for stealth - appears as system component
-internal const val TAG = "PackageInstaller"
-
-// Only log in debug builds to avoid detection in production
+internal const val TAG = "NextAlone"
 internal fun logDebug(msg: String) {
-    if (BuildConfig.DEBUG) {
-        Log.d(TAG, msg)
-    }
+    Log.d(TAG, msg)
 }
 
 internal fun logError(msg: String) {
-    if (BuildConfig.DEBUG) {
-        Log.e(TAG, msg)
-    }
+    Log.e(TAG, msg)
 }
 
 internal fun logThrowable(msg: String, t: Throwable? = null) {
-    if (BuildConfig.DEBUG) {
-        Log.e(TAG, msg + t?.message, t)
-    }
+    Log.e(TAG, msg + t?.message, t)
 }
 
 internal fun <T : Any> T.logDetail(info: String, vararg msg: Any) {

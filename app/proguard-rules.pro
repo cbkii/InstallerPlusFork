@@ -5,57 +5,19 @@
 # For more details, see
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
-# Prevent ProGuard from stripping generic signatures and keep annotations
--keepattributes Signature,SourceFile,LineNumberTable,*Annotation*
+# If your project uses WebView with JS, uncomment the following
+# and specify the fully qualified class name to the JavaScript interface
+# class:
+#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
+#   public *;
+#}
 
-# Keep only the Xposed entrypoint declared in xposed_init
-# This is the only class LSPosed needs to find by name
--keep class ltd.nextalone.pkginstallerplus.HookEntry { *; }
+# Uncomment this to preserve the line number information for
+# debugging stack traces.
+#-keepattributes SourceFile,LineNumberTable
 
-# Keep BuildConfig for version checks
--keep class ltd.nextalone.pkginstallerplus.BuildConfig { *; }
+# If you keep the line number information, uncomment this to
+# hide the original source file name.
+#-renamesourcefileattribute SourceFile
 
-# Keep BuildVersionDetector utility for Android 16 version detection
--keep class ltd.nextalone.pkginstallerplus.utils.BuildVersionDetector { *; }
-
-# Xposed API - must be accessible via reflection
--keep class de.robv.android.xposed.** { *; }
--keep interface de.robv.android.xposed.** { *; }
-
-# LSPosed needs to find IXposedHookLoadPackage and handleLoadPackage
--keep class * implements de.robv.android.xposed.IXposedHookLoadPackage {
-    *;
-}
-
-# LSPosed needs to find IXposedHookInitPackageResources
--keep class * implements de.robv.android.xposed.IXposedHookInitPackageResources {
-    *;
-}
-
-# Keep IXposedHookZygoteInit implementation
--keep class * implements de.robv.android.xposed.IXposedHookZygoteInit {
-    *;
-}
-
-# Android 16: Keep PackageInfo fields accessed via reflection
--keepclassmembers class android.content.pm.PackageInfo {
-    public long longVersionCode;
-    public java.lang.String versionName;
-    public java.lang.String packageName;
-    public android.content.pm.ApplicationInfo applicationInfo;
-}
-
-# Android 16: Keep UserManager methods accessed via reflection
--keep class android.os.UserManager {
-    public java.lang.String getUserName();
-    public android.os.UserHandle getUserForSerialNumber(long);
-}
-
-# Kotlin metadata (your codebase is 86% Kotlin)
--keep class kotlin.Metadata { *; }
-
-# Prevent optimization that breaks Xposed hooking:
-# - arithmetic/cast simplifications can break hook method signatures
-# - field optimizations can prevent reflection-based field access
-# - class merging can make LSPosed unable to locate hook classes reflectively
--optimizations !code/simplification/arithmetic,!code/simplification/cast,!field/*,!class/merging/*
+-keep class ltd.nextalone.**

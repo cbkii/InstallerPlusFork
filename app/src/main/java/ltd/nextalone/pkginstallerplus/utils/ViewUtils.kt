@@ -22,4 +22,3 @@ fun Context.px2sp(pxValue: Float): Int {
     val fontScale = resources.displayMetrics.scaledDensity
     return (pxValue / fontScale + 0.5f).toInt()
 }
-

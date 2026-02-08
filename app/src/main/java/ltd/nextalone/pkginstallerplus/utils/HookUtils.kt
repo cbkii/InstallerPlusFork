@@ -22,8 +22,7 @@ internal val String.clazz: Class<*>?
 internal fun Member.hook(callback: XC_MethodHook) = try {
     XposedBridge.hookMethod(this, callback)
 } catch (e: Throwable) {
-    // Silent failure in production - only log in debug builds
-    logError(e.message ?: "Hook failed")
+    Log.e(TAG, e.message, e)
     null
 }
 
@@ -31,8 +30,7 @@ internal inline fun Member.hookBefore(crossinline hooker: (XC_MethodHook.MethodH
     override fun beforeHookedMethod(param: MethodHookParam?) = try {
         hooker(param!!)
     } catch (e: Throwable) {
-        // Silent failure in production
-        logError(e.message ?: "Hook before failed")
+        Log.e(TAG, e.message, e)
         Unit
     }
 })
@@ -41,8 +39,7 @@ internal inline fun Member.hookAfter(crossinline hooker: (XC_MethodHook.MethodHo
     override fun afterHookedMethod(param: MethodHookParam?) = try {
         hooker(param!!)
     } catch (e: Throwable) {
-        // Silent failure in production
-        logError(e.message ?: "Hook after failed")
+        Log.e(TAG, e.message, e)
         Unit
     }
 })
@@ -131,50 +128,13 @@ internal fun Class<*>.method(name: String, size: Int, returnType: Class<*>, cond
     return null
 }
 
-// Android 16 compatibility: Check if v2 installer is available
-internal fun isV2InstallerAvailable(): Boolean {
-    return try {
-        // Use lpClassLoader to check in the target app's class loader, not module's
-        val classLoader = HookEntry.lpClassLoader ?: return false
-        
-        // Check for InstallationFragment as the primary indicator of v2 installer
-        // This is the minimum viable check - install functionality is more critical than uninstall
-        Class.forName("$INSTALLER_V2_PKG.fragments.InstallationFragment", false, classLoader)
-        
-        // Check if UninstallationFragment is also available (but don't fail if it's not)
-        val hasUninstallFragment = try {
-            Class.forName("$INSTALLER_V2_PKG.fragments.UninstallationFragment", false, classLoader)
-            true
-        } catch (e: ClassNotFoundException) {
-            false
-        }
-        
-        // Log what v2 UI components are available
-        if (hasUninstallFragment) {
-            logDebug("V2 Installer detected (Android 15+/16): Install + Uninstall UI available")
-        } else {
-            logDebug("V2 Installer detected (Android 15+/16): Install UI available, Uninstall UI not found")
-        }
-        
-        true
-    } catch (e: ClassNotFoundException) {
-        logDebug("V2 Installer not available: ${e.message}")
-        false
-    } catch (e: Exception) {
-        logError("Error checking v2 installer availability: ${e.message}")
-        false
-    }
-}
+internal val isV2InstallerAvailable: Boolean
+    get() = "$INSTALLER_V2_PKG.InstallLaunch".clazz != null
 
-// Android 16 compatibility: Get PackageInfo with proper API handling
 internal fun PackageManager.getPackageInfoOrNull(pkgName: String): PackageInfo? =
     try {
-        if (android.os.Build.VERSION.SDK_INT >= 33) {
-            getPackageInfo(pkgName, PackageManager.PackageInfoFlags.of(PackageManager.MATCH_UNINSTALLED_PACKAGES.toLong()))
-        } else {
-            @Suppress("DEPRECATION")
-            getPackageInfo(pkgName, PackageManager.MATCH_UNINSTALLED_PACKAGES)
-        }
+        @Suppress("DEPRECATION", "InlinedApi")
+        getPackageInfo(pkgName, PackageManager.MATCH_UNINSTALLED_PACKAGES)
     } catch (e: PackageManager.NameNotFoundException) {
         null
     }
