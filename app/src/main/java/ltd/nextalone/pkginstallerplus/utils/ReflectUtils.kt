@@ -59,3 +59,22 @@ internal fun Any.set(name: String, value: Any): Any = iPutObject(this, name, val
 
 internal fun Any.set(name: String, clz: Class<*>?, value: Any): Any = iPutObject(this, name, clz, value)
 
+/**
+ * Safely gets a property value with fallback.
+ * Returns the fallback value if the property access fails.
+ * 
+ * @param objName The name of the property to access
+ * @param fallback The fallback value to return on error
+ * @return The property value or fallback
+ */
+internal inline fun <reified T> Any.getSafe(objName: String, fallback: T, logMessage: String = ""): T {
+    return try {
+        this.get(objName) as? T ?: fallback
+    } catch (e: Exception) {
+        if (logMessage.isNotEmpty()) {
+            logError("$logMessage: ${e.message}")
+        }
+        fallback
+    }
+}
+

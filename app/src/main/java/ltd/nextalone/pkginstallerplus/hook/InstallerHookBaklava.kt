@@ -73,17 +73,20 @@ object InstallerHookBaklava {
             }
             
             // Try multiple possible field names for compatibility
-            val liveData = listOf("_currentInstallStage", "currentInstallStage", "mCurrentInstallStage")
-                .firstNotNullOfOrNull { key -> 
-                    try {
-                        viewModel.get(key)
-                    } catch (e: Exception) {
-                        null
-                    }
+            // Check field existence by attempting access without creating unnecessary exceptions
+            val fieldNames = listOf("_currentInstallStage", "currentInstallStage", "mCurrentInstallStage")
+            var liveData: Any? = null
+            
+            for (fieldName in fieldNames) {
+                liveData = viewModel.get(fieldName)
+                if (liveData != null) {
+                    logDebug("Baklava: Found install stage field: $fieldName")
+                    break
                 }
+            }
 
             if (liveData == null) {
-                logError("Baklava: currentInstallStage LiveData not found")
+                logError("Baklava: currentInstallStage LiveData not found (tried: ${fieldNames.joinToString(", ")})")
                 return@runCatching false
             }
             

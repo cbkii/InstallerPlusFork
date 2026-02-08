@@ -71,7 +71,13 @@ object BuildVersionDetector {
      * Checks if the current Android version is 15 or higher (Baklava and later).
      * These versions use the v2 Package Installer architecture.
      * 
-     * @return true if Android 15+, false otherwise
+     * Android 15 = API level 35 (Baklava)
+     * Android 16 = API level 36 (Baklava QPR variants)
+     * 
+     * The v2 installer introduces a new package structure under
+     * com.android.packageinstaller.v2.ui with fragment-based UI components.
+     * 
+     * @return true if Android 15+ (API 35+), false otherwise
      */
     fun isAndroid15OrHigher(): Boolean {
         return Build.VERSION.SDK_INT >= 35
