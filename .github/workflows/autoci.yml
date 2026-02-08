@@ -37,6 +37,16 @@ jobs:
       - name: Add local.properties
         run: echo ‘sdk.dir=/usr/local/lib/android/sdk’ >>${{ github.workspace }}/local.properties
 
+      # Decode and setup keystore from secrets
+      - name: Setup Keystore
+        if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+        run: |
+          echo "${{ secrets.SIGNING_KEYSTORE_BASE64 }}" | base64 -d > ${{ github.workspace }}/release.jks
+          echo "SIGNING_KEYSTORE_PATH=${{ github.workspace }}/release.jks" >> $GITHUB_ENV
+          echo "SIGNING_STORE_PASSWORD=${{ secrets.SIGNING_STORE_PASSWORD }}" >> $GITHUB_ENV
+          echo "SIGNING_KEY_ALIAS=${{ secrets.SIGNING_KEY_ALIAS }}" >> $GITHUB_ENV
+          echo "SIGNING_KEY_PASSWORD=${{ secrets.SIGNING_KEY_PASSWORD }}" >> $GITHUB_ENV
+
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 

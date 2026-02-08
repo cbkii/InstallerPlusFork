@@ -21,6 +21,16 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
     
+    # Decode and setup keystore from secrets
+    - name: Setup Keystore
+      if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+      run: |
+        echo "${{ secrets.SIGNING_KEYSTORE_BASE64 }}" | base64 -d > ${{ github.workspace }}/release.jks
+        echo "SIGNING_KEYSTORE_PATH=${{ github.workspace }}/release.jks" >> $GITHUB_ENV
+        echo "SIGNING_STORE_PASSWORD=${{ secrets.SIGNING_STORE_PASSWORD }}" >> $GITHUB_ENV
+        echo "SIGNING_KEY_ALIAS=${{ secrets.SIGNING_KEY_ALIAS }}" >> $GITHUB_ENV
+        echo "SIGNING_KEY_PASSWORD=${{ secrets.SIGNING_KEY_PASSWORD }}" >> $GITHUB_ENV
+    
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
     
@@ -34,7 +44,12 @@ jobs:
       run: cp app/build/outputs/apk/debug/app-debug.apk InstallerPlusFork-debug.apk
     
     - name: Rename Release APK
-      run: cp app/build/outputs/apk/release/app-release-unsigned.apk InstallerPlusFork-release.apk
+      run: |
+        if [ -f app/build/outputs/apk/release/app-release.apk ]; then
+          cp app/build/outputs/apk/release/app-release.apk InstallerPlusFork-release-signed.apk
+        else
+          cp app/build/outputs/apk/release/app-release-unsigned.apk InstallerPlusFork-release-unsigned.apk
+        fi
     
     - name: Upload Debug APK
       uses: actions/upload-artifact@v4
@@ -42,8 +57,16 @@ jobs:
         name: InstallerPlusFork-debug
         path: InstallerPlusFork-debug.apk
     
-    - name: Upload Release APK
+    - name: Upload Release APK (Signed)
+      if: hashFiles('InstallerPlusFork-release-signed.apk') != ''
       uses: actions/upload-artifact@v4
       with:
-        name: InstallerPlusFork-release
-        path: InstallerPlusFork-release.apk
+        name: InstallerPlusFork-release-signed
+        path: InstallerPlusFork-release-signed.apk
+    
+    - name: Upload Release APK (Unsigned)
+      if: hashFiles('InstallerPlusFork-release-unsigned.apk') != ''
+      uses: actions/upload-artifact@v4
+      with:
+        name: InstallerPlusFork-release-unsigned
+        path: InstallerPlusFork-release-unsigned.apk

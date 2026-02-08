@@ -11,3 +11,13 @@
 /build
 /captures
 /local.properties
+
+# Keystore files
+*.jks
+*.keystore
+keystore.properties
+release.jks
+keystore-base64.txt
+
+# Local signing config
+signing.properties
