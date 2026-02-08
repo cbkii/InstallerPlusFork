@@ -29,8 +29,6 @@ fun <T> iGetObjectOrNull(obj: Any, name: String?, type: Class<T>?): T? {
         f.isAccessible = true
         return f[obj] as T
     } catch (e: Exception) {
-        // Silent failure for production, but log for debugging if needed
-        logError("Failed to get field '$name' from ${clazz.simpleName}: ${e.message}")
     }
     return null
 }
@@ -46,8 +44,6 @@ fun iPutObject(obj: Any, name: String?, type: Class<*>?, value: Any?) {
         f.isAccessible = true
         f[obj] = value
     } catch (e: java.lang.Exception) {
-        // Silent failure for production, but log for debugging if needed
-        logError("Failed to set field '$name' in ${clazz.simpleName}: ${e.message}")
     }
 }
 
@@ -58,23 +54,3 @@ internal fun <T> Any.get(objName: String, clz: Class<T>? = null): T? = iGetObjec
 internal fun Any.set(name: String, value: Any): Any = iPutObject(this, name, value)
 
 internal fun Any.set(name: String, clz: Class<*>?, value: Any): Any = iPutObject(this, name, clz, value)
-
-/**
- * Safely gets a property value with fallback.
- * Returns the fallback value if the property access fails.
- * 
- * @param objName The name of the property to access
- * @param fallback The fallback value to return on error
- * @return The property value or fallback
- */
-internal inline fun <reified T> Any.getSafe(objName: String, fallback: T, logMessage: String = ""): T {
-    return try {
-        this.get(objName) as? T ?: fallback
-    } catch (e: Exception) {
-        if (logMessage.isNotEmpty()) {
-            logError("$logMessage: ${e.message}")
-        }
-        fallback
-    }
-}
-
