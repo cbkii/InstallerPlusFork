@@ -18,6 +18,14 @@
 5. LineageOS Android 13
 6. Pixel/AOSP Android 13
 7. Pixel/AOSP Android 14
+8. Pixel/AOSP Android 15 ✨
+9. **Pixel/AOSP Android 16** ✨ 最新 (Pixel 9/9a)
+
+### Android 16 要求
+- **LSPosed Framework v1.11+** (支持 Android 16)
+- **Magisk v26+** 启用 Zygisk
+- **Android 16 API level 36**
+- **Java 17 runtime** (用于构建)
 
 ## 许可证
 

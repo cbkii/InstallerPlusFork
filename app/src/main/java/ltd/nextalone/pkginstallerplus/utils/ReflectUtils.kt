@@ -29,6 +29,8 @@ fun <T> iGetObjectOrNull(obj: Any, name: String?, type: Class<T>?): T? {
         f.isAccessible = true
         return f[obj] as T
     } catch (e: Exception) {
+        // Silent failure for production, but log for debugging if needed
+        logError("Failed to get field '$name' from ${clazz.simpleName}: ${e.message}")
     }
     return null
 }
@@ -44,6 +46,8 @@ fun iPutObject(obj: Any, name: String?, type: Class<*>?, value: Any?) {
         f.isAccessible = true
         f[obj] = value
     } catch (e: java.lang.Exception) {
+        // Silent failure for production, but log for debugging if needed
+        logError("Failed to set field '$name' in ${clazz.simpleName}: ${e.message}")
     }
 }
 
