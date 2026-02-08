@@ -23,21 +23,25 @@ import ltd.nextalone.pkginstallerplus.utils.*
 object InstallerHookN {
     fun initOnce() {
         "com.android.packageinstaller.PackageInstallerActivity".clazz?.method("startInstallConfirm")?.hookAfter {
-            val ctx: Activity = it.thisObject as Activity
-            HookEntry.injectModuleResources(ctx.resources)
-            val spacerId = ctx.getId("spacer")
-            val spacer: View? = ctx.findViewById(spacerId)
-            if (spacer != null) {
-                replaceSpacerWithInfoView(spacer, ctx)
-            } else {
-                Log.e(TAG, "spacer view not found")
+            val ctx: Activity = it.thisObject as? Activity ?: return@hookAfter
+            val resourcesInjected = HookEntry.injectModuleResources(ctx.resources)
+            try {
+                val spacerId = ctx.getId("spacer")
+                val spacer: View? = ctx.findViewById(spacerId)
+                if (spacer != null) {
+                    replaceSpacerWithInfoView(spacer, ctx, resourcesInjected)
+                } else {
+                    Log.e(TAG, "spacer view not found")
+                }
+            } catch (t: Throwable) {
+                logThrowable("InstallerHookN.initOnce", t)
             }
         }
     }
 
-    private fun replaceSpacerWithInfoView(spacer: View, activity: Activity) {
+    private fun replaceSpacerWithInfoView(spacer: View, activity: Activity, resourcesInjected: Boolean) {
         val layout: ViewGroup.LayoutParams = spacer.layoutParams
-        val parent: ViewGroup = spacer.parent as ViewGroup
+        val parent: ViewGroup = spacer.parent as? ViewGroup ?: return
         val idx = parent.indexOfChild(spacer)
         layout.height = WRAP_CONTENT
         val textView = TextView(spacer.context)
@@ -49,9 +53,9 @@ object InstallerHookN {
         parent.removeViewAt(idx)
         parent.addView(textView, idx, layout)
 
-        val newPkgInfo: PackageInfo = getObjectField(activity, "mPkgInfo") as PackageInfo
+        val newPkgInfo: PackageInfo = getObjectField(activity, "mPkgInfo") as? PackageInfo ?: return
         val pkgName = newPkgInfo.packageName
-        val usrManager: UserManager = activity.get("mUserManager") as UserManager
+        val usrManager: UserManager = activity.get("mUserManager") as? UserManager ?: return
         val oldPkgInfo = try {
             activity.packageManager.getPackageInfo(pkgName, PackageManager.GET_UNINSTALLED_PACKAGES)
         } catch (e: PackageManager.NameNotFoundException) {
@@ -59,20 +63,27 @@ object InstallerHookN {
         }
 
         val sb = SpannableStringBuilder()
+        
+        // Use localized strings if resources were injected, otherwise use English fallbacks
+        val userLabel = if (resourcesInjected) activity.getString(R.string.IPP_info_user) else "User"
+        val packageLabel = if (resourcesInjected) activity.getString(R.string.IPP_info_package) else "Package name"
+        val versionLabel = if (resourcesInjected) activity.getString(R.string.IPP_info_version) else "Version"
+        val sdkLabel = if (resourcesInjected) activity.getString(R.string.IPP_info_sdk) else "Target SDK"
+        
         if (oldPkgInfo == null) {
             val newVersionStr = (newPkgInfo.versionName ?: "N/A") + "(" + newPkgInfo.versionCode + ")"
             val newSdkStr = newPkgInfo.applicationInfo?.targetSdkVersion?.toString() ?: "N/A"
 
-            sb.append(activity.getString(R.string.IPP_info_user) + ": ")
+            sb.append("$userLabel: ")
                 .append(usrManager.userName)
                 .append('\n')
-                .append(activity.getString(R.string.IPP_info_package) + ": ")
+                .append("$packageLabel: ")
                 .append(pkgName, ForegroundColorSpan(ThemeUtil.colorGreen), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                 .append('\n')
-                .append(activity.getString(R.string.IPP_info_version) + ": ")
+                .append("$versionLabel: ")
                 .append(newVersionStr, ForegroundColorSpan(ThemeUtil.colorGreen), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                 .append('\n')
-                .append(activity.getString(R.string.IPP_info_sdk) + ": ")
+                .append("$sdkLabel: ")
                 .append(newSdkStr, ForegroundColorSpan(ThemeUtil.colorGreen), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
 
         } else {
@@ -81,18 +92,18 @@ object InstallerHookN {
             val oldSdkStr = oldPkgInfo.applicationInfo?.targetSdkVersion?.toString() ?: "N/A"
             val newSdkStr = newPkgInfo.applicationInfo?.targetSdkVersion?.toString() ?: "N/A"
 
-            sb.append(activity.getString(R.string.IPP_info_user) + ": ")
+            sb.append("$userLabel: ")
                 .append(usrManager.userName)
                 .append('\n')
-                .append(activity.getString(R.string.IPP_info_package) + ": ")
+                .append("$packageLabel: ")
                 .append(pkgName, ForegroundColorSpan(ThemeUtil.colorGreen), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                 .append('\n')
-                .append(activity.getString(R.string.IPP_info_version) + ": ")
+                .append("$versionLabel: ")
                 .append(oldVersionStr, ForegroundColorSpan(ThemeUtil.colorRed), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                 .append(" ➞ ")
                 .append(newVersionStr, ForegroundColorSpan(ThemeUtil.colorGreen), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                 .append('\n')
-                .append(activity.getString(R.string.IPP_info_sdk) + ": ")
+                .append("$sdkLabel: ")
                 .append(oldSdkStr, ForegroundColorSpan(ThemeUtil.colorRed), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                 .append(" ➞ ")
                 .append(newSdkStr, ForegroundColorSpan(ThemeUtil.colorGreen), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
