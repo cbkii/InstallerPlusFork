@@ -8,11 +8,12 @@
 # Prevent ProGuard from stripping generic signatures and keep annotations
 -keepattributes Signature,SourceFile,LineNumberTable,*Annotation*
 
-# Keep all Xposed module classes and their members
--keep class ltd.nextalone.** { *; }
+# Keep only the Xposed entrypoint declared in xposed_init
+# This is the only class LSPosed needs to find by name
+-keep class ltd.nextalone.pkginstallerplus.HookEntry { *; }
 
-# Keep all inner classes explicitly
--keep class ltd.nextalone.**$* { *; }
+# Keep BuildConfig for version checks
+-keep class ltd.nextalone.pkginstallerplus.BuildConfig { *; }
 
 # Xposed API - must be accessible via reflection
 -keep class de.robv.android.xposed.** { *; }
@@ -46,9 +47,6 @@
     public java.lang.String getUserName();
     public android.os.UserHandle getUserForSerialNumber(long);
 }
-
-# Keep BuildConfig for debug checks
--keep class ltd.nextalone.pkginstallerplus.BuildConfig { *; }
 
 # Kotlin metadata (your codebase is 86% Kotlin)
 -keep class kotlin.Metadata { *; }
