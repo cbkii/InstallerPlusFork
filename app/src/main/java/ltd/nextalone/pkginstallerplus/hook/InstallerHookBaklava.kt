@@ -26,9 +26,12 @@ object InstallerHookBaklava {
             val fragment = it.thisObject
             val dialog = fragment.get("mDialog") as? Dialog ?: return@hookAfter
 
-            val activity =
+            val activity = runCatching {
                 fragment.javaClass.getMethod("requireActivity").invoke(fragment) as? Activity
-                    ?: return@hookAfter
+            }.getOrElse { e ->
+                logThrowable(msg = "Baklava: requireActivity() failed", t = e)
+                return@hookAfter
+            } ?: return@hookAfter
 
             val isConfirmation = runCatching {
                 val viewModel = activity.get("installViewModel") ?: return@hookAfter
@@ -53,9 +56,12 @@ object InstallerHookBaklava {
             val fragment = it.thisObject
             val dialog = fragment.get("mDialog") as? Dialog ?: return@hookAfter
 
-            val activity =
+            val activity = runCatching {
                 fragment.javaClass.getMethod("requireActivity").invoke(fragment) as? Activity
-                    ?: return@hookAfter
+            }.getOrElse { e ->
+                logThrowable(msg = "Baklava: requireActivity() failed in uninstall", t = e)
+                return@hookAfter
+            } ?: return@hookAfter
             injectModuleResources(activity.resources)
             addUninstallDetails(activity, dialog)
         }
