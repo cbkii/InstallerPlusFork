@@ -7,6 +7,24 @@ android {
     compileSdk 35
     buildToolsVersion '35.0.0'
 
+    // Load keystore properties if available (for CI signing)
+    def keystorePropsFile = rootProject.file('keystore.properties')
+    def keystoreProperties = new Properties()
+    if (keystorePropsFile.exists()) {
+        keystoreProperties.load(new FileInputStream(keystorePropsFile))
+    }
+
+    signingConfigs {
+        release {
+            if (keystorePropsFile.exists()) {
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
+        }
+    }
+
     defaultConfig {
         applicationId "ltd.nextalone.pkginstallerplus"
         minSdkVersion 23
@@ -20,6 +38,9 @@ android {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            if (keystorePropsFile.exists()) {
+                signingConfig signingConfigs.release
+            }
         }
     }
     aaptOptions {

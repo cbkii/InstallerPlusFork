@@ -40,11 +40,15 @@ object InstallerHookBaklava {
                 false
             }
 
-            if (isConfirmation) {
-                injectModuleResources(activity.resources)
-                addInstallDetails(activity, dialog)
-            } else {
-                removeInstallDetails(dialog)
+            try {
+                if (isConfirmation) {
+                    val resourcesInjected = injectModuleResources(activity.resources)
+                    addInstallDetails(activity, dialog, resourcesInjected)
+                } else {
+                    removeInstallDetails(dialog)
+                }
+            } catch (t: Throwable) {
+                logThrowable("InstallerHookBaklava.updateUI", t)
             }
         }
 
@@ -55,14 +59,20 @@ object InstallerHookBaklava {
             val activity =
                 fragment.javaClass.getMethod("requireActivity").invoke(fragment) as? Activity
                     ?: return@hookAfter
-            injectModuleResources(activity.resources)
-            addUninstallDetails(activity, dialog)
+            
+            try {
+                val resourcesInjected = injectModuleResources(activity.resources)
+                addUninstallDetails(activity, dialog, resourcesInjected)
+            } catch (t: Throwable) {
+                logThrowable("InstallerHookBaklava.addUninstallDetails", t)
+            }
         }
     }
 
     private fun addInstallDetails(
         activity: Activity,
         dialog: Dialog,
+        resourcesInjected: Boolean,
     ) {
         val appSnippet: ViewGroup = dialog.findHostView("app_snippet") ?: return
         val parent = appSnippet.parent as? ViewGroup ?: return
@@ -75,12 +85,18 @@ object InstallerHookBaklava {
         val usrManager = repository.get("userManager") as? UserManager ?: return
         val oldPkgInfo = activity.packageManager.getPackageInfoOrNull(newPkgInfo.packageName)
 
+        // Use localized strings if resources were injected, otherwise use English fallbacks
+        val userLabel = if (resourcesInjected) activity.getString(R.string.IPP_info_user) else "User"
+        val packageLabel = if (resourcesInjected) activity.getString(R.string.IPP_info_package) else "Package name"
+        val versionLabel = if (resourcesInjected) activity.getString(R.string.IPP_info_version) else "Version"
+        val sdkLabel = if (resourcesInjected) activity.getString(R.string.IPP_info_sdk) else "Target SDK"
+
         val sb = SpannableStringBuilder()
         sb
-            .append(activity.getString(R.string.IPP_info_user) + ": ")
+            .append("$userLabel: ")
             .append(usrManager.userName ?: "Owner")
             .append('\n')
-            .append(activity.getString(R.string.IPP_info_package) + ": ")
+            .append("$packageLabel: ")
             .append(
                 newPkgInfo.packageName,
                 ForegroundColorSpan(ThemeUtil.colorGreen),
@@ -89,13 +105,13 @@ object InstallerHookBaklava {
 
         if (oldPkgInfo == null) {
             sb
-                .append(activity.getString(R.string.IPP_info_version) + ": ")
+                .append("$versionLabel: ")
                 .append(
                     "${newPkgInfo.versionName ?: "N/A"}(${newPkgInfo.compatLongVersionCode()})",
                     ForegroundColorSpan(ThemeUtil.colorGreen),
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
                 ).append('\n')
-                .append(activity.getString(R.string.IPP_info_sdk) + ": ")
+                .append("$sdkLabel: ")
                 .append(
                     newPkgInfo.applicationInfo?.targetSdkVersion?.toString() ?: "N/A",
                     ForegroundColorSpan(ThemeUtil.colorGreen),
@@ -103,7 +119,7 @@ object InstallerHookBaklava {
                 )
         } else {
             sb
-                .append(activity.getString(R.string.IPP_info_version) + ": ")
+                .append("$versionLabel: ")
                 .append(
                     "${oldPkgInfo.versionName ?: "N/A"}(${oldPkgInfo.compatLongVersionCode()})",
                     ForegroundColorSpan(ThemeUtil.colorRed),
@@ -114,7 +130,7 @@ object InstallerHookBaklava {
                     ForegroundColorSpan(ThemeUtil.colorGreen),
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
                 ).append('\n')
-                .append(activity.getString(R.string.IPP_info_sdk) + ": ")
+                .append("$sdkLabel: ")
                 .append(
                     oldPkgInfo.applicationInfo?.targetSdkVersion?.toString() ?: "N/A",
                     ForegroundColorSpan(ThemeUtil.colorRed),
@@ -146,6 +162,7 @@ object InstallerHookBaklava {
     private fun addUninstallDetails(
         activity: Activity,
         dialog: Dialog,
+        resourcesInjected: Boolean,
     ) {
         val appSnippet: ViewGroup = dialog.findHostView("app_snippet") ?: return
         val parent = appSnippet.parent as? ViewGroup ?: return
@@ -157,21 +174,26 @@ object InstallerHookBaklava {
         val packageName = repository.get("targetPackageName") as? String ?: return
         val pkgInfo = activity.packageManager.getPackageInfoOrNull(packageName) ?: return
 
+        // Use localized strings if resources were injected, otherwise use English fallbacks
+        val packageLabel = if (resourcesInjected) activity.getString(R.string.IPP_info_package) else "Package name"
+        val versionLabel = if (resourcesInjected) activity.getString(R.string.IPP_info_version) else "Version"
+        val sdkLabel = if (resourcesInjected) activity.getString(R.string.IPP_info_sdk) else "Target SDK"
+
         val sb = SpannableStringBuilder()
         sb
-            .append(activity.getString(R.string.IPP_info_package) + ": ")
+            .append("$packageLabel: ")
             .append(
                 packageName,
                 ForegroundColorSpan(ThemeUtil.colorRed),
                 Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
             ).append('\n')
-            .append(activity.getString(R.string.IPP_info_version) + ": ")
+            .append("$versionLabel: ")
             .append(
                 "${pkgInfo.versionName ?: "N/A"}(${pkgInfo.compatLongVersionCode()})",
                 ForegroundColorSpan(ThemeUtil.colorRed),
                 Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
             ).append('\n')
-            .append(activity.getString(R.string.IPP_info_sdk) + ": ")
+            .append("$sdkLabel: ")
             .append(
                 pkgInfo.applicationInfo?.targetSdkVersion?.toString() ?: "N/A",
                 ForegroundColorSpan(ThemeUtil.colorRed),

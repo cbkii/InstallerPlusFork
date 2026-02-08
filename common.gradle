@@ -33,6 +33,6 @@ gradle.allprojects {
     }
 
     ext.getTimeStamp = {
-        return System.currentTimeSeconds()
+        return (System.currentTimeMillis() / 1000L) as int
     }
 }
