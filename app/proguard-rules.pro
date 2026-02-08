@@ -20,18 +20,17 @@
 
 # LSPosed needs to find IXposedHookLoadPackage and handleLoadPackage
 -keep class * implements de.robv.android.xposed.IXposedHookLoadPackage {
-    public void handleLoadPackage(...);
+    <methods>;
 }
 
 # LSPosed needs to find IXposedHookInitPackageResources
 -keep class * implements de.robv.android.xposed.IXposedHookInitPackageResources {
-    public void handleInitPackageResources(...);
+    <methods>;
 }
 
-# Keep all hook entry point methods that LSPosed calls
--keepclassmembers class * {
-    public void handleLoadPackage(...);
-    public void handleInitPackageResources(...);
+# Keep IXposedHookZygoteInit implementation
+-keep class * implements de.robv.android.xposed.IXposedHookZygoteInit {
+    <methods>;
 }
 
 # Android 16: Keep PackageInfo fields accessed via reflection
@@ -59,9 +58,6 @@
 
 # Kotlin metadata (your codebase is 86% Kotlin)
 -keep class kotlin.Metadata { *; }
--keepclassmembers class kotlin.Metadata {
-    public <methods>;
-}
 
 # Prevent optimization that breaks Xposed hooking
 -optimizations !code/simplification/arithmetic,!code/simplification/cast,!field/*,!class/merging/*
