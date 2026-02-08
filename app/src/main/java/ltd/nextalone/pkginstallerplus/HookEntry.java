@@ -64,14 +64,14 @@ public class HookEntry implements IXposedHookLoadPackage, IXposedHookZygoteInit 
         }
     }
 
-    public static void injectModuleResources(Resources res) {
+    public static boolean injectModuleResources(Resources res) {
         logDebug("injectModuleResources start");
         if (res == null) {
-            return;
+            return false;
         }
         try {
             res.getString(R.string.IPP_res_inject_success);
-            return;
+            return true;
         } catch (Resources.NotFoundException ignored) {
         }
         try {
@@ -80,7 +80,8 @@ public class HookEntry implements IXposedHookLoadPackage, IXposedHookZygoteInit 
             }
             if (sModulePath == null) {
                 // should not happen
-                throw new IllegalStateException("sModulePath is null");
+                logError("sModulePath is null, cannot inject resources");
+                return false;
             }
             if (sResInjectBeginTime == 0) {
                 sResInjectBeginTime = System.currentTimeMillis();
@@ -95,6 +96,7 @@ public class HookEntry implements IXposedHookLoadPackage, IXposedHookZygoteInit 
                 if (sResInjectEndTime == 0) {
                     sResInjectEndTime = System.currentTimeMillis();
                 }
+                return true;
             } catch (Resources.NotFoundException e) {
                 logError("Fatal: injectModuleResources: test injection failure!");
                 logError("injectModuleResources: cookie=" + cookie + ", path=" + sModulePath + ", loader=" + myClassLoader);
@@ -112,9 +114,11 @@ public class HookEntry implements IXposedHookLoadPackage, IXposedHookZygoteInit 
                     logError(String.valueOf(e2));
                 }
                 logError("sModulePath: exists = " + exist + ", isDirectory = " + isDir + ", canRead = " + read + ", fileLength = " + length);
+                return false;
             }
         } catch (Exception e) {
-            logError(String.valueOf(e));
+            logError("injectModuleResources failed: " + e);
+            return false;
         }
     }
 
